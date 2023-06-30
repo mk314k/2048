@@ -1,42 +1,184 @@
-#root {
-  max-width: 1280px;
+.app-shell {
+  width: min(92vw, 480px);
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  user-select: none;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.title-block {
+  text-align: left;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.game-title {
+  margin: 0;
+  font-size: 3.4rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #f8fafc;
 }
 
-.card {
-  padding: 2em;
+.game-subtitle {
+  margin: 8px 0 0;
+  font-size: 0.95rem;
+  color: #94a3b8;
 }
 
-.read-the-docs {
-  color: #888;
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.score-row {
+  display: flex;
+  gap: 8px;
+}
+
+.score-box {
+  min-width: 82px;
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  padding: 6px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.score-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.score-value {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #f8fafc;
+}
+
+.controls-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease, background-color 150ms ease;
+}
+
+.btn-primary {
+  background: #f59e0b;
+  color: #0f172a;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: #fbbf24;
+}
+
+.btn-secondary {
+  background: #1e293b;
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.board-frame {
+  position: relative;
+  background: #1e293b;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  padding: 12px;
+  border-radius: 16px;
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.42);
+}
+
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 12px;
+  aspect-ratio: 1 / 1;
+}
+
+.cell {
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 800;
+  font-size: 2rem;
+  background: #0f172a;
+  color: #f8fafc;
+  transition: transform 110ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.tile-0 {
+  background: rgba(15, 23, 42, 0.72);
+  color: transparent;
+}
+.tile-2 { background: #e2e8f0; color: #0f172a; }
+.tile-4 { background: #cbd5e1; color: #0f172a; }
+.tile-8 { background: #fb923c; color: #ffffff; }
+.tile-16 { background: #f97316; color: #ffffff; }
+.tile-32 { background: #ef4444; color: #ffffff; }
+.tile-64 { background: #dc2626; color: #ffffff; }
+.tile-128 { background: #facc15; color: #0f172a; font-size: 1.75rem; }
+.tile-256 { background: #eab308; color: #0f172a; font-size: 1.75rem; }
+.tile-512 { background: #f59e0b; color: #0f172a; font-size: 1.75rem; }
+.tile-1024 { background: #10b981; color: #ffffff; font-size: 1.45rem; }
+.tile-2048 { background: #06b6d4; color: #ffffff; font-size: 1.45rem; }
+.tile-super { background: #8b5cf6; color: #ffffff; font-size: 1.35rem; }
+
+.board-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.86);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.board-overlay h2 {
+  margin: 0;
+  font-size: 2rem;
+  color: #f8fafc;
+}
+
+.board-overlay p {
+  margin: 0;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.overlay-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
 }
