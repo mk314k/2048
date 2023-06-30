@@ -4,6 +4,14 @@
   padding: 2rem;
   text-align: center;
 }
+canvas{
+  width: 80vh;
+  height: 80vh;
+}
+.canvas-container{
+  border: 5px solid black;
+  padding: 10px;
+}
 
 .logo {
   height: 6em;
