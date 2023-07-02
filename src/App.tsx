@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import {
   BoardGrid,
@@ -29,6 +29,7 @@ function App() {
   const [bestScore, setBestScore] = useState<number>(() => readBestScore());
   const [prevSnapshot, setPrevSnapshot] = useState<{ board: BoardGrid; score: number } | null>(null);
   const [keepPlaying, setKeepPlaying] = useState<boolean>(false);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const maxTile = getMaxTile(board);
   const hasWon = maxTile >= TARGET_TILE && !keepPlaying;
@@ -126,7 +127,30 @@ function App() {
         </div>
       </header>
 
-      <main className="board-frame">
+      <main
+        className="board-frame"
+        onTouchStart={(e) => {
+          const touch = e.touches[0];
+          if (touch) {
+            touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+          }
+        }}
+        onTouchEnd={(e) => {
+          const start = touchStartRef.current;
+          touchStartRef.current = null;
+          const end = e.changedTouches[0];
+          if (!start || !end) return;
+          const dx = end.clientX - start.x;
+          const dy = end.clientY - start.y;
+          const threshold = 24;
+          if (Math.max(Math.abs(dx), Math.abs(dy)) < threshold) return;
+          if (Math.abs(dx) > Math.abs(dy)) {
+            handleMove(dx > 0 ? 'right' : 'left');
+          } else {
+            handleMove(dy > 0 ? 'down' : 'up');
+          }
+        }}
+      >
         <div className="board-grid" style={{ '--grid-size': GRID_SIZE } as React.CSSProperties}>
           {board.map((row, rIdx) =>
             row.map((val, cIdx) => (

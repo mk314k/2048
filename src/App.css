@@ -113,6 +113,7 @@
   padding: 12px;
   border-radius: 16px;
   box-shadow: 0 20px 44px rgba(0, 0, 0, 0.42);
+  touch-action: none;
 }
 
 .board-grid {
