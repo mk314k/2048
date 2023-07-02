@@ -2,6 +2,7 @@ import Grid from "./Grid.js"
 import Tile from "./Tile.js"
 
 const gameBoard = document.getElementById("root")
+let touchstartX, touchstartY, touchendX, touchendY;
 
 const grid = new Grid(gameBoard)
 grid.randomEmptyCell().tile = new Tile(gameBoard)
@@ -10,7 +11,75 @@ setupInput()
 
 function setupInput() {
   window.addEventListener("keydown", handleInput, { once: true })
+  gameBoard.addEventListener('touchstart', (event) => {
+    touchstartX = event.touches[0].clientX;
+    touchstartY = event.touches[0].clientY;
+  },{ once: true });
+  
+  gameBoard.addEventListener('touchend', (event) => {
+    touchendX = event.changedTouches[0].clientX;
+    touchendY = event.changedTouches[0].clientY;
+  
+    handleSwipe();
+  },{ once: true });
+  
 }
+
+// Handle swipe based on touch start and end positions
+async function handleSwipe() {
+  const deltaX = touchendX - touchstartX;
+  const deltaY = touchendY - touchstartY;
+
+  // Determine the primary direction of the slide
+  if (Math.abs(deltaX) > Math.abs(deltaY)) {
+    // Horizontal slide
+    if (deltaX > 0) {
+      // Slide right
+      if (!canMoveRight()) {
+        setupInput()
+        return
+      }
+      await moveRight()
+    } else {
+      // Slide left
+      if (!canMoveLeft()) {
+        setupInput()
+        return
+      }
+      await moveLeft()
+    }
+  } else {
+    // Vertical slide
+    if (deltaY > 0) {
+      // Slide down
+      if (!canMoveDown()) {
+        setupInput()
+        return
+      }
+      await moveDown()
+    } else {
+      // Slide up
+      if (!canMoveUp()) {
+        setupInput()
+        return
+      }
+      await moveUp()
+    }
+  }
+  grid.cells.forEach(cell => cell.mergeTiles())
+
+  const newTile = new Tile(gameBoard)
+  grid.randomEmptyCell().tile = newTile
+
+  if (!canMoveUp() && !canMoveDown() && !canMoveLeft() && !canMoveRight()) {
+    newTile.waitForTransition(true).then(() => {
+      alert("You lose")
+    })
+    return
+  }
+  setupInput()
+}
+
 
 async function handleInput(e) {
   switch (e.key) {
