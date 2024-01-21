@@ -12,7 +12,7 @@ The game is built using the following technologies:
 
 The goal of the game is to combine numbered tiles to reach the 2048 tile. You can use the arrow keys (up, down, left, right) to move the tiles in the corresponding direction. When two tiles with the same number collide, they merge into one tile with double the value. After each move, a new tile will appear randomly on the board.
 
-## Getting Started
+<!-- ## Getting Started
 
 To run the game locally on your machine, follow these steps:
 
@@ -20,7 +20,11 @@ To run the game locally on your machine, follow these steps:
 2. Navigate to the project directory: `cd 2048`
 3. Install the dependencies: `npm install`
 4. Start the development server: `npm run dev`
-5. Open your web browser and visit `http://localhost:5173` to play the game.
+5. Open your web browser and visit `http://localhost:5173` to play the game. -->
+
+## Preview
+
+![Gameplay Preview](assets/display.gif)
 
 <!-- ## Project Structure
 
@@ -35,9 +39,9 @@ The repository structure is organized as follows:
   - `App.tsx`: The main React component that renders the game.
   - `index.tsx`: The entry point of the application. -->
 
-## Deployment
+<!-- ## Deployment -->
 
-The game is automatically deployed to [mk314k.github.io/2048/](https://mk314k.github.io/2048/) whenever changes are pushed to the `main` branch of this repository. The deployment is configured using GitHub Pages.
+<!-- The game is automatically deployed to [mk314k.github.io/2048/](https://mk314k.github.io/2048/) whenever changes are pushed to the `main` branch of this repository. The deployment is configured using GitHub Pages. -->
 
 <!-- ## Contributing
 
