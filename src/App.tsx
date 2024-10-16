@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
+import { BoardBinder } from './boardBinder';
 import {
   BoardGrid,
   Direction,
@@ -13,6 +14,13 @@ import {
 
 const BEST_SCORE_KEY = '2048_best_score_v1';
 
+const STATIC_CELL_IDS: { id: string; row: number; col: number }[] = [];
+for (let r = 0; r < GRID_SIZE; r++) {
+  for (let c = 0; c < GRID_SIZE; c++) {
+    STATIC_CELL_IDS.push({ id: `cell-${r}-${c}`, row: r, col: c });
+  }
+}
+
 function readBestScore(): number {
   try {
     const raw = window.localStorage.getItem(BEST_SCORE_KEY);
@@ -24,52 +32,90 @@ function readBestScore(): number {
 }
 
 function App() {
-  const [board, setBoard] = useState<BoardGrid>(() => createInitialBoard().board);
-  const [score, setScore] = useState<number>(0);
-  const [bestScore, setBestScore] = useState<number>(() => readBestScore());
+  const binder = useMemo(() => new BoardBinder(), []);
+  const initialSetup = useMemo(() => createInitialBoard(), []);
+
+  const boardRef = useRef<BoardGrid>(initialSetup.board);
+  const scoreRef = useRef<number>(0);
+  const bestScoreRef = useRef<number>(readBestScore());
+
   const [prevSnapshot, setPrevSnapshot] = useState<{ board: BoardGrid; score: number } | null>(null);
+  const [maxTile, setMaxTile] = useState<number>(() => getMaxTile(initialSetup.board));
+  const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [keepPlaying, setKeepPlaying] = useState<boolean>(false);
+  const [lastDelta, setLastDelta] = useState<number>(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  const maxTile = getMaxTile(board);
   const hasWon = maxTile >= TARGET_TILE && !keepPlaying;
-  const isGameOver = !hasValidMoves(board);
+
+  useEffect(() => {
+    binder.syncBoard(boardRef.current, initialSetup.spawned, []);
+    binder.syncScores(scoreRef.current, bestScoreRef.current);
+  }, [binder, initialSetup]);
 
   const handleMove = useCallback(
     (direction: Direction) => {
       if (isGameOver || hasWon) return;
-      const result = moveBoard(board, direction);
+
+      const currentBoard = boardRef.current;
+      const result = moveBoard(currentBoard, direction);
       if (!result.moved) return;
 
-      setPrevSnapshot({ board, score });
-      setBoard(result.board);
-      const nextScore = score + result.scoreDelta;
-      setScore(nextScore);
-      if (nextScore > bestScore) {
-        setBestScore(nextScore);
+      const prevScore = scoreRef.current;
+      setPrevSnapshot({ board: currentBoard, score: prevScore });
+
+      boardRef.current = result.board;
+      const nextScore = prevScore + result.scoreDelta;
+      scoreRef.current = nextScore;
+      setLastDelta(result.scoreDelta);
+
+      if (nextScore > bestScoreRef.current) {
+        bestScoreRef.current = nextScore;
         try {
           window.localStorage.setItem(BEST_SCORE_KEY, String(nextScore));
         } catch {
           // Ignore storage quota errors
         }
       }
+
+      const spawnedList = result.spawnedCell
+        ? [{ row: result.spawnedCell.row, col: result.spawnedCell.col }]
+        : [];
+      binder.syncBoard(result.board, spawnedList, result.mergedCoords);
+      binder.syncScores(scoreRef.current, bestScoreRef.current);
+
+      setMaxTile(getMaxTile(result.board));
+      setIsGameOver(!hasValidMoves(result.board));
     },
-    [board, score, bestScore, isGameOver, hasWon],
+    [binder, isGameOver, hasWon],
   );
 
   const handleRestart = useCallback(() => {
-    setBoard(createInitialBoard().board);
-    setScore(0);
+    const fresh = createInitialBoard();
+    boardRef.current = fresh.board;
+    scoreRef.current = 0;
     setPrevSnapshot(null);
     setKeepPlaying(false);
-  }, []);
+    setLastDelta(0);
+    setMaxTile(getMaxTile(fresh.board));
+    setIsGameOver(false);
+
+    binder.syncBoard(fresh.board, fresh.spawned, []);
+    binder.syncScores(0, bestScoreRef.current);
+  }, [binder]);
 
   const handleUndo = useCallback(() => {
     if (!prevSnapshot) return;
-    setBoard(prevSnapshot.board);
-    setScore(prevSnapshot.score);
+    boardRef.current = prevSnapshot.board;
+    scoreRef.current = prevSnapshot.score;
     setPrevSnapshot(null);
-  }, [prevSnapshot]);
+    setLastDelta(0);
+    setMaxTile(getMaxTile(prevSnapshot.board));
+    setIsGameOver(!hasValidMoves(prevSnapshot.board));
+
+    binder.syncBoard(prevSnapshot.board, [], []);
+    binder.syncScores(prevSnapshot.score, bestScoreRef.current);
+  }, [binder, prevSnapshot]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -100,19 +146,27 @@ function App() {
     <div className="app-shell">
       <header className="top-bar">
         <div className="title-block">
-          <h1 className="game-title">2048</h1>
-          <p className="game-subtitle">Join the tiles, reach <strong>2048</strong>!</p>
+          <div className="title-badge-row">
+            <h1 className="game-title">2048</h1>
+            <span className="max-pill">Peak {maxTile}</span>
+          </div>
+          <p className="game-subtitle">
+            Slide &amp; merge matching tiles to reach <strong>2048</strong>
+          </p>
         </div>
 
         <div className="right-panel">
           <div className="score-row">
             <div className="score-box">
               <span className="score-label">SCORE</span>
-              <span className="score-value">{score}</span>
+              <div className="score-val-wrap">
+                <span id="score-val" className="score-value">0</span>
+                {lastDelta > 0 && <span className="score-delta">+{lastDelta}</span>}
+              </div>
             </div>
             <div className="score-box">
               <span className="score-label">BEST</span>
-              <span className="score-value">{bestScore}</span>
+              <span id="best-score-val" className="score-value">0</span>
             </div>
           </div>
 
@@ -151,25 +205,21 @@ function App() {
           }
         }}
       >
-        <div className="board-grid" style={{ '--grid-size': GRID_SIZE } as React.CSSProperties}>
-          {board.map((row, rIdx) =>
-            row.map((val, cIdx) => (
-              <div
-                key={`cell-${rIdx}-${cIdx}`}
-                id={`cell-${rIdx}-${cIdx}`}
-                className={`cell tile-${val > 2048 ? 'super' : val}`}
-                data-value={val}
-              >
-                {val > 0 ? val : ''}
-              </div>
-            )),
-          )}
+        <div className="board-grid">
+          {STATIC_CELL_IDS.map((cell) => (
+            <div
+              key={cell.id}
+              id={cell.id}
+              className="cell tile-0"
+              data-value="0"
+            />
+          ))}
         </div>
 
         {(hasWon || isGameOver) && (
           <div className="board-overlay">
-            <h2>{hasWon ? 'You reached 2048!' : 'No Moves Left'}</h2>
-            <p>Final Score: {score}</p>
+            <h2>{hasWon ? '2048 Reached!' : 'Game Over'}</h2>
+            <p>Score: {scoreRef.current} &middot; Best: {bestScoreRef.current}</p>
             <div className="overlay-actions">
               {hasWon && (
                 <button type="button" className="btn-secondary" onClick={() => setKeepPlaying(true)}>
@@ -183,6 +233,11 @@ function App() {
           </div>
         )}
       </main>
+
+      <footer className="hint-bar">
+        <span>Use <strong>Arrow Keys</strong> or <strong>WASD</strong> (or swipe) to slide tiles</span>
+        <span className="binder-tag">StateVarList 4&times;4</span>
+      </footer>
     </div>
   );
 }
